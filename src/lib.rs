@@ -34,6 +34,10 @@ impl Buffer {
         &self.buf[0..self.len]
     }
 
+    fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     fn reset(&mut self) {
         self.len = 0;
     }
@@ -74,7 +78,7 @@ impl Env {
                 return self.handle_buffer();
             }
             (State::Recording, BACKSPACE) => {
-                if self.buffer.len == 0 {
+                if self.buffer.is_empty() {
                     self.state = State::Idle;
                 };
                 self.buffer.remove();
