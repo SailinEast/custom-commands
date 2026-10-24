@@ -1,6 +1,5 @@
 const DICTIONARY: &[(&[u8], &str)] = &[("imp".as_bytes(), "😈")];
 const BACKSPACE: u8 = 8;
-const ENTER: u8 = 13;
 
 enum State {
     Idle,
@@ -73,7 +72,7 @@ impl Env {
                 self.buffer.reset();
                 self.state = State::Recording;
             }
-            (State::Recording, ENTER) => {
+            (State::Recording, b'\\') => {
                 self.state = State::Idle;
                 return self.handle_buffer();
             }
@@ -107,7 +106,7 @@ mod tests {
 
     #[test]
     fn test_imp_binary_input_4_none_1_some() {
-        let keys = [b'/', b'i', b'm', b'p', ENTER];
+        let keys = [b'/', b'i', b'm', b'p', b'\\'];
         let mut env = Env::new();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
@@ -117,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_imp_binary_input_with_backspace() {
-        let keys = [b'/', b'i', b'n', BACKSPACE, b'm', b'p', ENTER];
+        let keys = [b'/', b'i', b'n', BACKSPACE, b'm', b'p', b'\\'];
         let mut env = Env::new();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
@@ -128,7 +127,7 @@ mod tests {
     #[test]
     fn test_imp_binary_input_with_underflow_prevention() {
         let keys = [
-            BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', ENTER,
+            BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', b'\\',
         ];
         let mut env = Env::new();
         for i in 0..keys.len() - 1 {
@@ -139,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_recording_state_persistence_when_slash_erased() {
-        let keys = [b'/', BACKSPACE, b'i', b'm', b'p', ENTER];
+        let keys = [b'/', BACKSPACE, b'i', b'm', b'p', b'\\'];
         let mut env = Env::new();
         for key in keys {
             assert_eq!(env.handle_key(key), None);
@@ -149,7 +148,7 @@ mod tests {
     #[test]
     fn test_recording_state_persistence_when_slash_erased_multiple() {
         let keys = [
-            b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', ENTER,
+            b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', b'\\',
         ];
         let mut env = Env::new();
         for key in keys {
