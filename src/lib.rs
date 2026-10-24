@@ -93,3 +93,39 @@ impl Env {
             .map(|index| DICTIONARY[index].1)
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_imp_binary_input_4_none_1_some() {
+        let keys = [b'/', b'i', b'm', b'p', ENTER];
+        let mut env = Env::new();
+        for i in 0..keys.len() - 1 {
+            assert_eq!(env.handle_key(keys[i]), None);
+        }
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+    }
+
+    #[test]
+    fn test_imp_binary_input_with_backspace() {
+        let keys = [b'/', b'i', b'n', BACKSPACE, b'm', b'p', ENTER];
+        let mut env = Env::new();
+        for i in 0..keys.len() - 1 {
+            assert_eq!(env.handle_key(keys[i]), None);
+        }
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+    }
+
+    #[test]
+    fn test_imp_binary_input_with_underflow_prevention() {
+        let keys = [b'/', BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', ENTER];
+        let mut env = Env::new();
+        for i in 0..keys.len() - 1 {
+            assert_eq!(env.handle_key(keys[i]), None);
+        }
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+    }
+}
