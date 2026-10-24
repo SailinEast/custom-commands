@@ -1,4 +1,6 @@
 const DICTIONARY: &[(&str, &str)] = &[("imp", "😈")];
+const BACKSPACE: u8 = 8;
+const ENTER: u8 = 13;
 
 enum State {
     Idle,
@@ -22,6 +24,10 @@ impl Buffer {
             self.buf[self.len] = val;
             self.len += 1;
         }
+    }
+
+    fn remove(&mut self) {
+        self.len = self.len.saturating_sub(1);
     }
 
     fn as_str(&self) -> &str {
@@ -56,16 +62,20 @@ impl Env {
             /*
             '/'                      -> start fresh, set to recording;
             idle                     -> nothing;
-            recording, '\n'          -> search dictionary and reset buffer;
+            recording, enter         -> search dictionary and reset buffer;
+            recording, backspace     -> decrement buffer length (acts as pop);
             recording, any other key -> add to buffer;
             */
             (_, b'/') => {
                 self.buffer.reset();
                 self.state = State::Recording;
             }
-            (State::Recording, b'\n') => {
+            (State::Recording, ENTER) => {
                 self.state = State::Idle;
                 return self.handle_buffer();
+            }
+            (State::Recording, BACKSPACE) => {
+                self.buffer.remove();
             }
             (State::Recording, k) => {
                 self.buffer.append(k);

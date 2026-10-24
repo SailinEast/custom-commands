@@ -1,14 +1,17 @@
 use custom_cmds::Env;
+use rdev::listen;
 
 fn main() {
-    let key_presses: Vec<u8> = vec![
-        b'p', b'/', b'i', b'm', b'p', b'o', b'/', b'i', b'm', b'p', b'\n', b'o', b'/', b'i', b'm',
-        b'p', b'p', b'\n',
-    ];
     let mut env = Env::new();
-    for key in key_presses {
-        if let Some(value) = env.handle_key(key) {
-            println!("{}", value);
+
+    if let Err(error) = listen(move |event| {
+        if let Some(value) = event.name {
+            let key = *value.as_bytes().first().unwrap_or(&b'\0');
+            if let Some(emoji) = env.handle_key(key) {
+                println!("{}", emoji);
+            }
         }
+    }) {
+        println!("Error: {:?}", error);
     }
 }
