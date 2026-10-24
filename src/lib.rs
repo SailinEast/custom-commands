@@ -1,4 +1,4 @@
-const DICTIONARY: &[(&str, &str)] = &[("imp", "😈")];
+const DICTIONARY: &[(&[u8], &str)] = &[("imp".as_bytes(), "😈")];
 const BACKSPACE: u8 = 8;
 const ENTER: u8 = 13;
 
@@ -30,9 +30,8 @@ impl Buffer {
         self.len = self.len.saturating_sub(1);
     }
 
-    fn as_str(&self) -> &str {
-        let slice = &self.buf[0..self.len];
-        str::from_utf8(slice).expect("Invalid")
+    fn as_bytes(&self) -> &[u8] {
+        &self.buf[0..self.len]
     }
 
     fn reset(&mut self) {
@@ -86,7 +85,7 @@ impl Env {
     }
 
     fn handle_buffer(&mut self) -> Option<&str> {
-        let typed_word = self.buffer.as_str();
+        let typed_word = self.buffer.as_bytes();
 
         DICTIONARY
             .binary_search_by_key(&typed_word, |&(key, _)| key)
