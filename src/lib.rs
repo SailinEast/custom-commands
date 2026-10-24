@@ -74,6 +74,9 @@ impl Env {
                 return self.handle_buffer();
             }
             (State::Recording, BACKSPACE) => {
+                if self.buffer.len == 0 {
+                    self.state = State::Idle;
+                };
                 self.buffer.remove();
             }
             (State::Recording, k) => {
@@ -93,7 +96,6 @@ impl Env {
             .map(|index| DICTIONARY[index].1)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -121,11 +123,33 @@ mod tests {
 
     #[test]
     fn test_imp_binary_input_with_underflow_prevention() {
-        let keys = [b'/', BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', ENTER];
+        let keys = [
+            BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', ENTER,
+        ];
         let mut env = Env::new();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
         assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+    }
+
+    #[test]
+    fn test_recording_state_persistence_when_slash_erased() {
+        let keys = [b'/', BACKSPACE, b'i', b'm', b'p', ENTER];
+        let mut env = Env::new();
+        for key in keys {
+            assert_eq!(env.handle_key(key), None);
+        }
+    }
+
+    #[test]
+    fn test_recording_state_persistence_when_slash_erased_multiple() {
+        let keys = [
+            b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', ENTER,
+        ];
+        let mut env = Env::new();
+        for key in keys {
+            assert_eq!(env.handle_key(key), None);
+        }
     }
 }
