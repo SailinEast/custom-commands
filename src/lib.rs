@@ -1,5 +1,44 @@
-const DICTIONARY: &[(&[u8], &str)] = &[("imp".as_bytes(), "😈")];
+use serde::Deserialize;
+use std::collections::BTreeMap;
+
 const BACKSPACE: u8 = 8;
+
+#[derive(Deserialize)]
+struct RawConfig {
+    dictionary: BTreeMap<String, String>,
+    keybinds: Keybinds,
+}
+
+struct Config {
+    dictionary: Vec<(&'static [u8], &'static str)>,
+    keybinds: Keybinds,
+}
+
+#[derive(Deserialize)]
+struct Keybinds {
+    start_char: char,
+    end_char: char,
+}
+
+fn load_config() -> Config {
+    let path = std::env::current_exe().unwrap().parent().unwrap().join("config.toml");
+    let data = std::fs::read_to_string(&path).unwrap();
+    let raw_config = toml::from_str::<RawConfig>(&data).unwrap();
+
+    let mut dictionary = Vec::new();
+
+    for (key, value) in raw_config.dictionary {
+        let static_key = key.leak().as_bytes();
+        let static_val = value.leak() as &str;
+
+        dictionary.push((static_key, static_val));
+    }
+
+    Config {
+        dictionary,
+        keybinds: raw_config.keybinds,
+    }
+}
 
 enum State {
     Idle,
@@ -45,6 +84,7 @@ impl Buffer {
 pub struct Env {
     buffer: Buffer,
     state: State,
+    config: Config,
 }
 impl Default for Env {
     fn default() -> Self {
@@ -56,6 +96,20 @@ impl Env {
         Self {
             buffer: Buffer::new(),
             state: State::Idle,
+            config: load_config(),
+        }
+    }
+    fn new_for_tests() -> Self {
+        Self {
+            buffer: Buffer::new(),
+            state: State::Idle,
+            config: Config {
+                dictionary: vec![(b"imp", "😈")],
+                keybinds: Keybinds {
+                    start_char: '/',
+                    end_char: '\\',
+                }
+            },
         }
     }
 
@@ -68,13 +122,13 @@ impl Env {
             recording, backspace     -> decrement buffer length (acts as pop);
             recording, any other key -> add to buffer;
             */
-            (_, b'/') => {
-                self.buffer.reset();
-                self.state = State::Recording;
-            }
-            (State::Recording, b'\\') => {
+            (State::Recording, k) if k == self.config.keybinds.end_char as u8 => {
                 self.state = State::Idle;
                 return self.handle_buffer();
+            }
+            (_, k) if k == self.config.keybinds.start_char as u8 => {
+                self.buffer.reset();
+                self.state = State::Recording;
             }
             (State::Recording, BACKSPACE) if self.buffer.is_empty() => {
                 self.state = State::Idle;
@@ -93,10 +147,10 @@ impl Env {
     fn handle_buffer(&mut self) -> Option<(&'static str, usize)> {
         let typed_word = self.buffer.as_bytes();
 
-        DICTIONARY
+        self.config.dictionary
             .binary_search_by_key(&typed_word, |&(key, _)| key)
             .ok()
-            .map(|index| (DICTIONARY[index].1, DICTIONARY[index].1.len()))
+            .map(|index| (self.config.dictionary[index].1, typed_word.len() + 1))
     }
 }
 
@@ -107,7 +161,7 @@ mod tests {
     #[test]
     fn test_imp_binary_input_4_none_1_some() {
         let keys = [b'/', b'i', b'm', b'p', b'\\'];
-        let mut env = Env::new();
+        let mut env = Env::new_for_tests();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
@@ -117,7 +171,7 @@ mod tests {
     #[test]
     fn test_imp_binary_input_with_backspace() {
         let keys = [b'/', b'i', b'n', BACKSPACE, b'm', b'p', b'\\'];
-        let mut env = Env::new();
+        let mut env = Env::new_for_tests();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
@@ -129,7 +183,7 @@ mod tests {
         let keys = [
             BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', b'\\',
         ];
-        let mut env = Env::new();
+        let mut env = Env::new_for_tests();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
@@ -139,7 +193,7 @@ mod tests {
     #[test]
     fn test_recording_state_persistence_when_slash_erased() {
         let keys = [b'/', BACKSPACE, b'i', b'm', b'p', b'\\'];
-        let mut env = Env::new();
+        let mut env = Env::new_for_tests();
         for key in keys {
             assert_eq!(env.handle_key(key), None);
         }
@@ -150,7 +204,7 @@ mod tests {
         let keys = [
             b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', b'\\',
         ];
-        let mut env = Env::new();
+        let mut env = Env::new_for_tests();
         for key in keys {
             assert_eq!(env.handle_key(key), None);
         }
@@ -158,6 +212,7 @@ mod tests {
 
     #[test]
     fn test_dictionary_sorted_alphabetically() {
-        assert!(DICTIONARY.is_sorted_by_key(|&(k, _)| k));
+        let env = Env::new_for_tests();
+        assert!(env.config.dictionary.is_sorted_by_key(|&(k, _)| k));
     }
 }
