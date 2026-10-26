@@ -157,4 +157,9 @@ mod tests {
             assert_eq!(env.handle_key(key), None);
         }
     }
+
+    #[test]
+    fn test_dictionary_sorted_alphabetically() {
+        assert!(DICTIONARY.is_sorted_by_key(|&(k, _)| k));
+    }
 }
