@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-rdev = "0.5.3"
+rdev = { version = "0.5.3", features = ["unstable_grab"] }
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.8"
+windows-sys = { version = "0.61.2", features = ["Win32_UI_Input_KeyboardAndMouse"] }
