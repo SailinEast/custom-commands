@@ -59,7 +59,7 @@ impl Env {
         }
     }
 
-    pub fn handle_key(&mut self, key: u8) -> Option<&str> {
+    pub fn handle_key(&mut self, key: u8) -> Option<(&'static str, usize)> {
         match (&self.state, key) {
             /*
             '/'                      -> start fresh, set to recording;
@@ -76,10 +76,12 @@ impl Env {
                 self.state = State::Idle;
                 return self.handle_buffer();
             }
-            (State::Recording, BACKSPACE) => {
+            (State::Recording, BACKSPACE) if self.buffer.is_empty() => {
                 if self.buffer.is_empty() {
                     self.state = State::Idle;
                 };
+            }
+            (State::Recording, BACKSPACE) => {
                 self.buffer.remove();
             }
             (State::Recording, k) => {
@@ -90,13 +92,13 @@ impl Env {
         None
     }
 
-    fn handle_buffer(&mut self) -> Option<&str> {
+    fn handle_buffer(&mut self) -> Option<(&'static str, usize)> {
         let typed_word = self.buffer.as_bytes();
 
         DICTIONARY
             .binary_search_by_key(&typed_word, |&(key, _)| key)
             .ok()
-            .map(|index| DICTIONARY[index].1)
+            .map(|index| (DICTIONARY[index].1, DICTIONARY[index].1.len()))
     }
 }
 
@@ -111,7 +113,7 @@ mod tests {
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
-        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some(("😈", 4)));
     }
 
     #[test]
@@ -121,7 +123,7 @@ mod tests {
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
-        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some(("😈", 4)));
     }
 
     #[test]
@@ -133,7 +135,7 @@ mod tests {
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
-        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some("😈"));
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some(("😈", 4)));
     }
 
     #[test]
