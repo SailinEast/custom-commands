@@ -77,9 +77,7 @@ impl Env {
                 return self.handle_buffer();
             }
             (State::Recording, BACKSPACE) if self.buffer.is_empty() => {
-                if self.buffer.is_empty() {
-                    self.state = State::Idle;
-                };
+                self.state = State::Idle;
             }
             (State::Recording, BACKSPACE) => {
                 self.buffer.remove();
