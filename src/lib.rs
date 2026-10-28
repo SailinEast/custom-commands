@@ -162,7 +162,6 @@ mod tests {
 
     fn assert_sequence(keys: &[u8], expected_end: Option<(&str, usize)>) {
         let mut env = Env::default();
-        env.config = load_config();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
