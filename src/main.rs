@@ -30,7 +30,8 @@ fn key_event(flags: u32, scan_code: u16) -> INPUT {
 }
 
 fn replace_with(text: &str, len_in_dict: usize) {
-    let mut inputs = Vec::with_capacity(len_in_dict * 2 + 4);
+    let utf16_len = text.encode_utf16().count();
+    let mut inputs = Vec::with_capacity(len_in_dict * 2 + (utf16_len * 2));
     let backspace_down = key_event(KEY_DOWN, BACKSPACE);
     let backspace_up = key_event(KEY_UP, BACKSPACE);
 
