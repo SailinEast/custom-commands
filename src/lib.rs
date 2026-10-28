@@ -21,7 +21,11 @@ struct Keybinds {
 }
 
 fn load_config() -> Config {
-    let path = std::env::current_exe().unwrap().parent().unwrap().join("config.toml");
+    let path = std::env::current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("config.toml");
     let data = std::fs::read_to_string(&path).unwrap();
     let raw_config = toml::from_str::<RawConfig>(&data).unwrap();
 
@@ -108,7 +112,7 @@ impl Env {
                 keybinds: Keybinds {
                     start_char: '/',
                     end_char: '\\',
-                }
+                },
             },
         }
     }
@@ -116,10 +120,10 @@ impl Env {
     pub fn handle_key(&mut self, key: u8) -> Option<(&'static str, usize)> {
         match (&self.state, key) {
             /*
-            '/'                      -> start fresh, set to recording;
+            recording, end char      -> search dictionary and reset buffer;
+            start char               -> start fresh, set to recording;
             idle                     -> nothing;
-            recording, enter         -> search dictionary and reset buffer;
-            recording, backspace     -> decrement buffer length (acts as pop);
+            recording, backspace     -> decrement buffer length (acts as pop) or set to idle if buffer is empty;
             recording, any other key -> add to buffer;
             */
             (State::Recording, k) if k == self.config.keybinds.end_char as u8 => {
@@ -148,7 +152,8 @@ impl Env {
     fn handle_buffer(&mut self) -> Option<(&'static str, usize)> {
         let typed_word = self.buffer.as_bytes();
 
-        self.config.dictionary
+        self.config
+            .dictionary
             .binary_search_by_key(&typed_word, |&(key, _)| key)
             .ok()
             .map(|index| (self.config.dictionary[index].1, typed_word.len() + 1))
