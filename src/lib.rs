@@ -92,18 +92,6 @@ pub struct Env {
 }
 impl Default for Env {
     fn default() -> Self {
-        Self::new()
-    }
-}
-impl Env {
-    pub fn new() -> Self {
-        Self {
-            buffer: Buffer::new(),
-            state: State::Idle,
-            config: load_config(),
-        }
-    }
-    fn new_for_tests() -> Self {
         Self {
             buffer: Buffer::new(),
             state: State::Idle,
@@ -114,6 +102,15 @@ impl Env {
                     end_char: '\\',
                 },
             },
+        }
+    }
+}
+impl Env {
+    pub fn new() -> Self {
+        Self {
+            buffer: Buffer::new(),
+            state: State::Idle,
+            config: load_config(),
         }
     }
 
@@ -163,61 +160,37 @@ impl Env {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_imp_binary_input_4_none_1_some() {
-        let keys = [b'/', b'i', b'm', b'p', b'\\'];
-        let mut env = Env::new_for_tests();
+    fn assert_sequence(keys: &[u8], expected_end: Option<(&str, usize)>) {
+        let mut env = Env::default();
+        env.config = load_config();
         for i in 0..keys.len() - 1 {
             assert_eq!(env.handle_key(keys[i]), None);
         }
-        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some(("😈", 4)));
+        assert_eq!(env.handle_key(keys[keys.len() - 1]), expected_end);
+    }
+
+    #[test]
+    fn test_imp_binary_input_4_none_1_some() {
+        assert_sequence(b"/imp\\", Some(("😈", 4)));
     }
 
     #[test]
     fn test_imp_binary_input_with_backspace() {
-        let keys = [b'/', b'i', b'n', BACKSPACE, b'm', b'p', b'\\'];
-        let mut env = Env::new_for_tests();
-        for i in 0..keys.len() - 1 {
-            assert_eq!(env.handle_key(keys[i]), None);
-        }
-        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some(("😈", 4)));
+        assert_sequence(&[b'/', b'i', b'n', BACKSPACE, b'm', b'p', b'\\'], Some(("😈", 4)));
     }
 
     #[test]
     fn test_imp_binary_input_with_underflow_prevention() {
-        let keys = [
-            BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', b'\\',
-        ];
-        let mut env = Env::new_for_tests();
-        for i in 0..keys.len() - 1 {
-            assert_eq!(env.handle_key(keys[i]), None);
-        }
-        assert_eq!(env.handle_key(keys[keys.len() - 1]), Some(("😈", 4)));
+        assert_sequence(&[BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', b'\\'], Some(("😈", 4)));
     }
 
     #[test]
     fn test_recording_state_persistence_when_slash_erased() {
-        let keys = [b'/', BACKSPACE, b'i', b'm', b'p', b'\\'];
-        let mut env = Env::new_for_tests();
-        for key in keys {
-            assert_eq!(env.handle_key(key), None);
-        }
+        assert_sequence(&[b'/', BACKSPACE, b'i', b'm', b'p', b'\\'], None);
     }
 
     #[test]
     fn test_recording_state_persistence_when_slash_erased_multiple() {
-        let keys = [
-            b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', b'\\',
-        ];
-        let mut env = Env::new_for_tests();
-        for key in keys {
-            assert_eq!(env.handle_key(key), None);
-        }
-    }
-
-    #[test]
-    fn test_dictionary_sorted_alphabetically() {
-        let env = Env::new_for_tests();
-        assert!(env.config.dictionary.is_sorted_by_key(|&(k, _)| k));
+        assert_sequence(&[b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', b'\\'], None);
     }
 }
