@@ -124,6 +124,7 @@ impl Env {
             */
             (State::Recording, k) if k == self.config.keybinds.end_char as u8 => {
                 self.state = State::Idle;
+                self.config = load_config();
                 return self.handle_buffer();
             }
             (_, k) if k == self.config.keybinds.start_char as u8 => {
