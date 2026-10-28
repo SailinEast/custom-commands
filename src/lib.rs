@@ -176,12 +176,21 @@ mod tests {
 
     #[test]
     fn test_imp_binary_input_with_backspace() {
-        assert_sequence(&[b'/', b'i', b'n', BACKSPACE, b'm', b'p', b'\\'], Some(("😈", 4)));
+        assert_sequence(
+            &[b'/', b'i', b'n', BACKSPACE, b'm', b'p', b'\\'],
+            Some(("😈", 4)),
+        );
     }
 
     #[test]
     fn test_imp_binary_input_with_underflow_prevention() {
-        assert_sequence(&[BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p', b'\\'], Some(("😈", 4)));
+        assert_sequence(
+            &[
+                BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, BACKSPACE, b'/', b'i', b'm', b'p',
+                b'\\',
+            ],
+            Some(("😈", 4)),
+        );
     }
 
     #[test]
@@ -191,6 +200,11 @@ mod tests {
 
     #[test]
     fn test_recording_state_persistence_when_slash_erased_multiple() {
-        assert_sequence(&[b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', b'\\'], None);
+        assert_sequence(
+            &[
+                b'/', b'i', b'm', BACKSPACE, BACKSPACE, BACKSPACE, b'i', b'm', b'p', b'\\',
+            ],
+            None,
+        );
     }
 }
